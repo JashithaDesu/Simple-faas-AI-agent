@@ -1,0 +1,28 @@
+# Fault: process allocates ~250MB, container limit is 100Mi -> OOMKilled.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reports
+  namespace: agent-lab
+  labels:
+    app: reports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reports
+  template:
+    metadata:
+      labels:
+        app: reports
+    spec:
+      containers:
+        - name: reports
+          image: polinux/stress
+          command: ["stress"]
+          args: ["--vm", "1", "--vm-bytes", "250M", "--vm-hang", "1"]
+          resources:
+            requests:
+              memory: "50Mi"
+            limits:
+              memory: "100Mi"

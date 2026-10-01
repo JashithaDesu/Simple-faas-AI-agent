@@ -1,0 +1,35 @@
+# Fault: APP_MODE has a typo. The app validates it on startup and exits 1.
+# Only the logs reveal WHICH setting is wrong; pod status just says CrashLoopBackOff.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments
+  namespace: agent-lab
+  labels:
+    app: payments
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payments
+  template:
+    metadata:
+      labels:
+        app: payments
+    spec:
+      containers:
+        - name: payments
+          image: busybox:1.36
+          env:
+            - name: APP_MODE
+              value: "prodution"
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "payments-service starting, APP_MODE=$APP_MODE"
+              case "$APP_MODE" in
+                production|staging) ;;
+                *) echo "FATAL: unsupported APP_MODE '$APP_MODE' (expected production|staging)"; exit 1 ;;
+              esac
+              echo "ready"
+              sleep 3600

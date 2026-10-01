@@ -1,0 +1,40 @@
+# The agent's identity. It can read, and nothing else.
+# This is the real guardrail: even if the model "decides" to delete something,
+# the API server refuses, because this Role has no write verbs.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agent-lab
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agent-reader
+  namespace: agent-lab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: agent-read-only
+  namespace: agent-lab
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: agent-reader-binding
+  namespace: agent-lab
+subjects:
+  - kind: ServiceAccount
+    name: agent-reader
+    namespace: agent-lab
+roleRef:
+  kind: Role
+  name: agent-read-only
+  apiGroup: rbac.authorization.k8s.io

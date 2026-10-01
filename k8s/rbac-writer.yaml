@@ -1,0 +1,42 @@
+# The write identity, separate from agent-reader. It can patch exactly one
+# thing: the spec of a Function custom resource. It has no permission on
+# Deployments, pods, or anything else — every real effect happens through
+# the mini-faas controller's own reconciliation of that Function object,
+# not through the agent touching the cluster directly.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agent-writer
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: agent-write-limited
+  namespace: default
+rules:
+  - apiGroups: ["faas.jashitha.dev"]
+    resources: ["functions"]
+    verbs: ["get", "list", "watch", "patch"]
+  # Named allowlist: these two Deployments only, never hello-function's
+  # (that one is owned by the controller and must go through the Function
+  # CR above). resourceNames makes this a hard RBAC boundary, not just a
+  # convention enforced in Python.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "patch"]
+    resourceNames: ["mini-faas-gateway", "mini-faas-manager"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: agent-writer-binding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: agent-writer
+    namespace: default
+roleRef:
+  kind: Role
+  name: agent-write-limited
+  apiGroup: rbac.authorization.k8s.io
