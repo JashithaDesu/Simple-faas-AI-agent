@@ -1,4 +1,4 @@
-# AIOps Incident Agent: Day 1 (read-only diagnosis)
+# AIOps Incident Agent:
 
 An LLM agent that receives a Kubernetes alert, investigates with **read-only** tools,
 and returns a structured diagnosis. A human acts on it. Day 2 adds write actions behind
